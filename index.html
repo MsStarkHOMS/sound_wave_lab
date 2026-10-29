@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sound Wave Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+html,body{margin:0}
+
+/* Layout: one lab bench — the live wave stage on graph paper, controls under it, then a challenge deck */
+:root {
+  --paper: #f5f7f2;
+  --card: #ffffff;
+  --ink: #1f2a3a;
+  --muted: #5b6676;
+  --grid: #e1e8e1;
+  --rule: #c9d3cb;
+  --wave: #0e8486;
+  --hot: #e2552c;
+  --sun: #f2b632;
+  --sun-ink: #6b4a00;
+  --good: #2e8b45;
+  --bad: #c2412a;
+  --wash-hot: #fde4da;
+  --wash-wave: #d8f0ef;
+  --font-display: "Fredoka", "Trebuchet MS", "Segoe UI", sans-serif;
+  --font-body: "Nunito", "Segoe UI", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #111923; --card: #19242f; --ink: #e7edf2; --muted: #98a6b5; --grid: #223040; --rule: #314255;
+    --wave: #3cc7c6; --hot: #ff7b55; --sun: #f5c451; --sun-ink: #2a1f00; --good: #5fcf7a; --bad: #ff8a72;
+    --wash-hot: #3a2420; --wash-wave: #16343a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #111923; --card: #19242f; --ink: #e7edf2; --muted: #98a6b5; --grid: #223040; --rule: #314255;
+  --wave: #3cc7c6; --hot: #ff7b55; --sun: #f5c451; --sun-ink: #2a1f00; --good: #5fcf7a; --bad: #ff8a72;
+  --wash-hot: #3a2420; --wash-wave: #16343a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5;
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.wrap {
+  max-width: 1060px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 48px; display: grid; gap: 22px;
+}
+header { display: grid; gap: 8px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(2.2rem, 5vw, 3.2rem); line-height: 1.05; margin: 0; color: var(--hot); text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; margin: 0; text-wrap: balance; }
+.intro { margin: 0; max-width: 65ch; color: var(--muted); font-size: 1.05rem; }
+.silent { display: inline-flex; align-items: center; gap: 8px; width: fit-content; background: var(--sun); color: var(--sun-ink); font-weight: 800; font-size: .85rem; padding: 4px 12px; border-radius: 999px; letter-spacing: .02em; }
+.panel { background: var(--card); border: 2px solid var(--ink); border-radius: 14px; }
+.stage { overflow: hidden; }
+.stage-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; padding: 12px 16px; border-bottom: 2px solid var(--ink); background: var(--wash-wave); }
+.stage-head .lbl { font-family: var(--font-display); font-weight: 600; font-size: 1.1rem; }
+.stage-head .sub { color: var(--muted); font-size: .9rem; }
+.view-label { display: flex; justify-content: space-between; gap: 8px; padding: 10px 16px 0; font-size: .78rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+canvas.view { display: block; width: 100%; }
+#particles { height: 200px; }
+#graph { height: 190px; border-top: 2px dashed var(--rule); }
+.hear { display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(4, minmax(0, 1fr)); border-top: 2px solid var(--ink); }
+.hear > div { padding: 12px 16px; border-right: 1px solid var(--rule); min-width: 0; }
+.hear > div:last-child { border-right: 0; }
+.hear .k { font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.hear .v { font-family: var(--font-data); font-weight: 600; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.hear .v small { font-family: var(--font-body); font-weight: 600; color: var(--muted); font-size: .8rem; display: block; }
+.hear .say { font-family: var(--font-display); font-weight: 600; font-size: 1.15rem; color: var(--wave); }
+.controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.ctl { padding: 16px; display: grid; gap: 10px; align-content: start; }
+.ctl h3 { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 1.15rem; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.ctl h3 output { font-family: var(--font-data); font-size: .95rem; color: var(--hot); }
+.ctl p { margin: 0; color: var(--muted); font-size: .9rem; }
+input[type=range] { width: 100%; accent-color: var(--hot); height: 28px; }
+.ends { display: flex; justify-content: space-between; font-size: .8rem; font-weight: 700; color: var(--muted); }
+.seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+button { font: inherit; cursor: pointer; }
+.chip { border: 2px solid var(--ink); background: var(--card); color: var(--ink); border-radius: 10px; padding: 8px 10px; font-weight: 800; text-align: left; line-height: 1.2; }
+.chip small { display: block; font-weight: 600; color: var(--muted); font-size: .78rem; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--card); }
+.chip[aria-pressed="true"] small { color: var(--card); opacity: .8; }
+.chip:focus-visible, .ans:focus-visible, input:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+.toggles { display: grid; gap: 8px; }
+.toggles .chip { text-align: center; }
+.terms { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; }
+.term { padding: 14px 16px; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); min-width: 0; }
+.term:nth-child(3n) { border-right: 0; }
+.term:nth-last-child(-n+3) { border-bottom: 0; }
+.term b { font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; }
+.term span { color: var(--muted); font-size: .92rem; }
+.dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+.section-head { display: grid; gap: 4px; }
+.section-head p { margin: 0; color: var(--muted); max-width: 65ch; }
+.deck { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.card { padding: 14px; display: grid; gap: 10px; align-content: start; }
+.card .q { font-weight: 800; display: flex; gap: 10px; align-items: flex-start; }
+.num { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--hot); color: var(--card); display: grid; place-items: center; font-family: var(--font-display); font-weight: 600; }
+.pair { display: grid; gap: 6px; }
+.pair .row { display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: center; gap: 6px; }
+.pair .row b { font-family: var(--font-display); font-size: 1.1rem; }
+.pair canvas { width: 100%; height: 56px; display: block; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
+.answers { display: flex; gap: 8px; }
+.ans { flex: 1; border: 2px solid var(--ink); background: var(--card); color: var(--ink); border-radius: 10px; padding: 6px; font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; }
+.ans.right { background: var(--good); border-color: var(--good); color: var(--card); }
+.ans.wrong { background: var(--bad); border-color: var(--bad); color: var(--card); }
+.feedback { margin: 0; font-size: .9rem; min-height: 2.7em; color: var(--muted); }
+.feedback.ok { color: var(--good); font-weight: 700; }
+.feedback.no { color: var(--bad); font-weight: 700; }
+.score { font-family: var(--font-data); font-weight: 600; color: var(--hot); }
+footer { color: var(--muted); font-size: .85rem; text-align: center; }
+@media (max-width: 820px) {
+  .controls, .deck { grid-template-columns: minmax(0, 1fr); }
+  .hear { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hear > div:first-child { grid-column: 1 / -1; border-right: 0; border-bottom: 1px solid var(--rule); }
+  .hear > div { border-bottom: 1px solid var(--rule); }
+  .terms { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .term, .term:nth-child(3n), .term:nth-last-child(-n+3) { border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .term:nth-child(2n) { border-right: 0; }
+}
+@media (max-width: 460px) { .terms { grid-template-columns: minmax(0, 1fr); } .term { border-right: 0 !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="silent">Silent lab: nothing plays out loud</span>
+    <h1>Sound Wave Lab</h1>
+    <p class="intro">Sound is a vibration that travels through particles. Change the pitch, the loudness and the material, then watch how the particles and the wave change. Press <b>Freeze</b> to stop the wave and count or measure.</p>
+  </header>
+
+  <section class="panel stage" aria-label="Sound wave simulation">
+    <div class="stage-head">
+      <span class="lbl">A speaker sends sound to an ear</span>
+      <span class="sub">Orange particles are squeezed together (compressions).</span>
+    </div>
+    <div class="view-label"><span>View 1 · Particles (longitudinal wave)</span><span id="mediumTag">Air</span></div>
+    <canvas id="particles" class="view" aria-label="Particles moving back and forth as sound passes"></canvas>
+    <div class="view-label"><span>View 2 · Wave graph (air pressure)</span><span>crests line up with compressions</span></div>
+    <canvas id="graph" class="view" aria-label="Wave graph of air pressure"></canvas>
+    <div class="hear" aria-live="polite">
+      <div><div class="k">You would hear</div><div class="say" id="say">A medium-loud, low-pitched sound</div></div>
+      <div><div class="k">Pitch (frequency)</div><div class="v" id="vHz">400 Hz<small>vibrations per second</small></div></div>
+      <div><div class="k">Loudness</div><div class="v" id="vDb">about 60 dB<small>normal talking</small></div></div>
+      <div><div class="k">Speed of sound</div><div class="v" id="vSpeed">343 m/s<small>in air</small></div></div>
+      <div><div class="k">Wavelength</div><div class="v" id="vLam">0.86 m<small>length of one wave</small></div></div>
+    </div>
+  </section>
+
+  <section class="controls" aria-label="Controls">
+    <div class="panel ctl">
+      <h3><label for="pitch">Pitch</label><output id="oPitch">4</output></h3>
+      <input type="range" id="pitch" min="1" max="10" step="1" value="4">
+      <div class="ends"><span>Low pitch</span><span>High pitch</span></div>
+      <p>Higher pitch = faster vibrations.</p>
+      <h3 style="margin-top:6px"><label for="loud">Loudness</label><output id="oLoud">5</output></h3>
+      <input type="range" id="loud" min="1" max="10" step="1" value="5">
+      <div class="ends"><span>Quiet</span><span>Loud</span></div>
+      <p>Louder = bigger vibrations.</p>
+    </div>
+    <div class="panel ctl">
+      <h3>Material (medium)</h3>
+      <div class="seg" role="group" aria-label="Material sound travels through">
+        <button class="chip" id="m-gas" data-m="gas" aria-pressed="true">Gas<small>air</small></button>
+        <button class="chip" id="m-liquid" data-m="liquid" aria-pressed="false">Liquid<small>water</small></button>
+        <button class="chip" id="m-solid" data-m="solid" aria-pressed="false">Solid<small>steel</small></button>
+        <button class="chip" id="m-vacuum" data-m="vacuum" aria-pressed="false">Vacuum<small>outer space</small></button>
+      </div>
+      <p>Sound travels fastest when particles are packed tightly together.</p>
+    </div>
+    <div class="panel ctl">
+      <h3>Lab tools</h3>
+      <div class="toggles">
+        <button class="chip" id="freeze" aria-pressed="false">Freeze the wave</button>
+        <button class="chip" id="labels" aria-pressed="true">Labels on</button>
+        <button class="chip" id="slow" aria-pressed="false">Slow motion</button>
+        <button class="chip" id="reset" aria-pressed="false">Reset to start</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel terms" aria-label="Key words">
+    <div class="term"><b><span class="dot" style="background:var(--hot)"></span>Compression</b><span>Where particles are squeezed close together. Higher pressure.</span></div>
+    <div class="term"><b><span class="dot" style="background:var(--muted)"></span>Rarefaction</b><span>Where particles are spread far apart. Lower pressure.</span></div>
+    <div class="term"><b><span class="dot" style="background:var(--wave)"></span>Wavelength</b><span>The distance from one compression to the next (or crest to crest).</span></div>
+    <div class="term"><b><span class="dot" style="background:var(--sun)"></span>Amplitude</b><span>How big the vibration is. Bigger amplitude = louder sound.</span></div>
+    <div class="term"><b><span class="dot" style="background:var(--ink)"></span>Frequency</b><span>How many waves pass each second, measured in hertz (Hz). Sets the pitch.</span></div>
+    <div class="term"><b><span class="dot" style="background:var(--good)"></span>Medium</b><span>The material sound travels through. Sound cannot travel through a vacuum.</span></div>
+  </section>
+
+  <section class="section-head">
+    <h2>Wave Detective Challenge</h2>
+    <p>Compare wave A and wave B on each card. Tap your answer, then record it on your worksheet. <span class="score" id="score">Score: 0 / 6</span></p>
+  </section>
+  <section class="deck" id="deck" aria-label="Challenge cards"></section>
+
+  <footer>© Science Creations Hub</footer>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const css = () => { const s = getComputedStyle(document.documentElement); const g = (n) => s.getPropertyValue(n).trim(); return { paper: g('--paper'), card: g('--card'), ink: g('--ink'), muted: g('--muted'), grid: g('--grid'), rule: g('--rule'), wave: g('--wave'), hot: g('--hot'), sun: g('--sun'), washHot: g('--wash-hot') }; };
+  const MED = {
+    gas: { name: 'Air', v: 343, rel: 1, sp: 15, rows: 7, jit: 5, where: 'in air' },
+    liquid: { name: 'Water', v: 1480, rel: 1.6, sp: 10, rows: 10, jit: 2, where: 'in water' },
+    solid: { name: 'Steel', v: 5960, rel: 2.3, sp: 8, rows: 12, jit: 0, where: 'in steel' },
+    vacuum: { name: 'Vacuum', v: 0, rel: 1, sp: 0, rows: 0, jit: 0, where: 'no particles' },
+  };
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const st = { f: 4, a: 5, m: 'gas', paused: reduced, labels: true, slow: false, t: 0 };
+  let C = css();
+  const pc = $('particles'), gc = $('graph');
+  let parts = [], W = 800;
+  const X0 = 78; // speaker face
+  const lamPx = () => 300 * MED[st.m].rel / st.f;
+  const omega = () => 2 * Math.PI * (0.35 + 0.12 * st.f);
+
+  function size(cv) {
+    const r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+    cv.width = Math.round(r.width * d); cv.height = Math.round(r.height * d);
+    const ctx = cv.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0); return { ctx, w: r.width, h: r.height };
+  }
+  function makeParticles() {
+    const M = MED[st.m]; parts = [];
+    if (!M.sp) return;
+    const h = 200, top = 26, bot = h - 18, xEnd = W - 70;
+    let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+    for (let x = X0 + 14; x < xEnd; x += M.sp) {
+      for (let r = 0; r < M.rows; r++) {
+        const y = top + (r + 0.5) * (bot - top) / M.rows;
+        parts.push({ x: x + (rnd() - .5) * M.jit * 2, y: y + (rnd() - .5) * M.jit * 1.6 });
+      }
+    }
+  }
+  function phaseAt(x) { return (2 * Math.PI / lamPx()) * (x - X0) - omega() * st.t; }
+
+  function drawSpeaker(ctx, h, s) {
+    const cy = h / 2;
+    ctx.fillStyle = C.ink; ctx.beginPath(); ctx.roundRect(14, cy - 34, 30, 68, 6); ctx.fill();
+    ctx.fillStyle = C.sun; ctx.strokeStyle = C.ink; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(44, cy - 14); ctx.lineTo(X0 - 8 + s, cy - 40); ctx.lineTo(X0 - 8 + s, cy + 40); ctx.lineTo(44, cy + 14); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = C.ink; ctx.font = '700 11px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('SPEAKER', 34, h - 6);
+  }
+  function drawEar(ctx, w, h) {
+    const x = w - 34, cy = h / 2;
+    ctx.strokeStyle = C.ink; ctx.lineWidth = 3; ctx.fillStyle = C.washHot;
+    ctx.beginPath(); ctx.moveTo(x - 10, cy + 30); ctx.bezierCurveTo(x - 14, cy + 4, x - 22, cy - 6, x - 18, cy - 24);
+    ctx.bezierCurveTo(x - 14, cy - 44, x + 18, cy - 44, x + 18, cy - 14); ctx.bezierCurveTo(x + 18, cy + 6, x + 4, cy + 6, x + 4, cy + 22);
+    ctx.bezierCurveTo(x + 4, cy + 34, x - 6, cy + 38, x - 10, cy + 30); ctx.fill(); ctx.stroke();
+    ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x - 6, cy - 16); ctx.bezierCurveTo(x - 2, cy - 30, x + 12, cy - 24, x + 8, cy - 10); ctx.bezierCurveTo(x + 4, cy, x - 4, cy - 4, x - 2, cy + 8); ctx.stroke();
+    ctx.fillStyle = C.ink; ctx.font = '700 11px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('EAR', x, h - 6);
+  }
+  function tag(ctx, x, y, text, col) {
+    ctx.font = '800 11px Nunito, sans-serif'; const tw = ctx.measureText(text).width + 12;
+    ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect(x - tw / 2, y - 14, tw, 18, 9); ctx.fill();
+    ctx.fillStyle = C.card; ctx.textAlign = 'center'; ctx.fillText(text, x, y - 1);
+  }
+
+  function drawParticles() {
+    const { ctx, w, h } = pc._s;
+    ctx.clearRect(0, 0, w, h); ctx.fillStyle = C.card; ctx.fillRect(0, 0, w, h);
+    const Apx = st.a * 1.15, M = MED[st.m];
+    drawSpeaker(ctx, h, st.m === 'vacuum' ? 0 : Apx * 0.8 * Math.sin(-omega() * st.t));
+    drawEar(ctx, w, h);
+    if (st.m === 'vacuum') {
+      ctx.fillStyle = C.muted; ctx.font = '700 15px Nunito, sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('Empty space: no particles to vibrate, so no sound reaches the ear.', w / 2, h / 2 + 5);
+      return;
+    }
+    const r = st.m === 'gas' ? 3.2 : st.m === 'liquid' ? 2.7 : 2.4;
+    for (const p of parts) {
+      const ph = phaseAt(p.x), dx = Apx * Math.sin(ph), c = -Math.cos(ph);
+      ctx.fillStyle = c > 0.55 && st.a > 1 ? C.hot : C.ink;
+      ctx.globalAlpha = c > 0.55 ? 1 : 0.55 + 0.3 * (c + 1) / 2;
+      ctx.beginPath(); ctx.arc(p.x + dx, p.y, r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    if (st.labels) {
+      const k = 2 * Math.PI / lamPx(), wt = omega() * st.t;
+      const xs = []; for (let n = -40; n < 80; n++) { const x = X0 + (Math.PI + 2 * Math.PI * n + wt) / k; if (x > X0 + 40 && x < w - 90) xs.push(x); }
+      const xr = []; for (let n = -40; n < 80; n++) { const x = X0 + (2 * Math.PI * n + wt) / k; if (x > X0 + 40 && x < w - 90) xr.push(x); }
+      if (xs[0]) tag(ctx, xs[0], 16, 'COMPRESSION', C.hot);
+      const rr = xr.find((x) => !xs[0] || Math.abs(x - xs[0]) > 80) ;
+      if (rr) tag(ctx, rr, 16, 'RAREFACTION', C.muted);
+    }
+  }
+
+  function drawGraph() {
+    const { ctx, w, h } = gc._s;
+    ctx.clearRect(0, 0, w, h); ctx.fillStyle = C.card; ctx.fillRect(0, 0, w, h);
+    const mid = h / 2 + 4, L = X0 + 2, R = w - 70;
+    ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
+    for (let y = mid % 20; y < h; y += 20) { ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(R, y); ctx.stroke(); }
+    for (let x = L; x <= R; x += 20) { ctx.beginPath(); ctx.moveTo(x, 8); ctx.lineTo(x, h - 8); ctx.stroke(); }
+    ctx.strokeStyle = C.muted; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(L, mid); ctx.lineTo(R, mid); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = C.muted; ctx.font = '700 11px Nunito, sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText('higher', 8, 22); ctx.fillText('pressure', 8, 35); ctx.fillText('lower', 8, h - 24); ctx.fillText('pressure', 8, h - 11);
+    ctx.textAlign = 'right'; ctx.fillText('distance →', w - 8, mid + 4);
+    const Ag = st.m === 'vacuum' ? 0 : st.a * 7.5;
+    ctx.strokeStyle = C.wave; ctx.lineWidth = 3.5; ctx.lineJoin = 'round'; ctx.beginPath();
+    for (let x = L; x <= R; x += 2) { const y = mid - Ag * -Math.cos(phaseAt(x)); x === L ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+    ctx.stroke();
+    if (st.labels && Ag > 0) {
+      const k = 2 * Math.PI / lamPx(), wt = omega() * st.t;
+      const crests = []; for (let n = -40; n < 80; n++) { const x = X0 + (Math.PI + 2 * Math.PI * n + wt) / k; if (x > L + 4 && x < R - 4) crests.push(x); }
+      const cy = mid - Ag;
+      if (crests.length >= 2) {
+        const [a, b] = crests; const y = Math.max(12, cy - 14);
+        ctx.strokeStyle = C.wave; ctx.fillStyle = C.wave; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(a, y); ctx.lineTo(b, y); ctx.stroke();
+        [[a, 1], [b, -1]].forEach(([x, s]) => { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 7 * s, y - 4); ctx.lineTo(x + 7 * s, y + 4); ctx.closePath(); ctx.fill(); });
+        ctx.font = '800 11px Nunito, sans-serif'; ctx.textAlign = 'center';
+        const lab = 'WAVELENGTH'; const tw = ctx.measureText(lab).width + 10;
+        if (b - a > tw + 6) { ctx.fillStyle = C.card; ctx.fillRect((a + b) / 2 - tw / 2, y - 7, tw, 14); ctx.fillStyle = C.wave; ctx.fillText(lab, (a + b) / 2, y + 4); }
+        else { ctx.fillStyle = C.wave; ctx.fillText(lab, (a + b) / 2, Math.min(h - 6, mid + Ag + 18)); }
+      }
+      if (crests.length >= 1) {
+        const x = crests[crests.length - 1] + 0;
+        ctx.strokeStyle = C.sun; ctx.fillStyle = C.sun; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(x, mid); ctx.lineTo(x, cy + 6); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x, cy); ctx.lineTo(x - 5, cy + 8); ctx.lineTo(x + 5, cy + 8); ctx.closePath(); ctx.fill();
+        ctx.font = '800 11px Nunito, sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = C.ink;
+        if (x + 74 < R) ctx.fillText('AMPLITUDE', x + 7, (mid + cy) / 2 + 4); else { ctx.textAlign = 'right'; ctx.fillText('AMPLITUDE', x - 7, (mid + cy) / 2 + 4); }
+      }
+    }
+    if (st.m === 'vacuum') { ctx.fillStyle = C.muted; ctx.font = '700 13px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Flat line: no pressure changes in a vacuum', (L + R) / 2, mid - 12); }
+  }
+
+  const PW = ['very low', 'very low', 'low', 'low', 'medium', 'medium', 'high', 'high', 'very high', 'very high'];
+  const LW = ['very quiet', 'very quiet', 'quiet', 'quiet', 'medium-loud', 'medium-loud', 'loud', 'loud', 'very loud', 'very loud'];
+  const DB = (a) => 20 + (a - 1) * 10;
+  const dbRef = (d) => d <= 30 ? 'a whisper' : d <= 50 ? 'a quiet room' : d <= 70 ? 'normal talking' : d <= 90 ? 'busy traffic' : 'a rock concert';
+  function readouts() {
+    const M = MED[st.m], hz = st.f * 100, d = DB(st.a);
+    $('oPitch').textContent = st.f; $('oLoud').textContent = st.a; $('mediumTag').textContent = M.name;
+    $('vHz').innerHTML = `${hz} Hz<small>vibrations per second</small>`;
+    $('vDb').innerHTML = `about ${d} dB<small>like ${dbRef(d)}</small>`;
+    if (st.m === 'vacuum') {
+      $('say').textContent = 'Nothing at all: silence';
+      $('vSpeed').innerHTML = `0 m/s<small>can't travel</small>`; $('vLam').innerHTML = `none<small>no wave forms</small>`;
+    } else {
+      const ln = PW[st.f - 1], lw = LW[st.a - 1];
+      $('say').textContent = `A ${lw}, ${ln}-pitched sound`;
+      $('vSpeed').innerHTML = `${M.v.toLocaleString('en-US')} m/s<small>${M.where}</small>`;
+      const lam = M.v / hz; $('vLam').innerHTML = `${lam >= 10 ? lam.toFixed(1) : lam.toFixed(2)} m<small>length of one wave</small>`;
+    }
+  }
+
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (!st.paused) st.t += dt * (st.slow ? 0.25 : 1);
+    drawParticles(); drawGraph();
+    requestAnimationFrame(frame);
+  }
+  function layout() { pc._s = size(pc); gc._s = size(gc); W = pc._s.w; makeParticles(); }
+
+  $('pitch').addEventListener('input', (e) => { st.f = +e.target.value; readouts(); });
+  $('loud').addEventListener('input', (e) => { st.a = +e.target.value; readouts(); });
+  document.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => {
+    st.m = b.dataset.m; document.querySelectorAll('[data-m]').forEach((x) => x.setAttribute('aria-pressed', x === b)); makeParticles(); readouts();
+  }));
+  const flip = (id, key, on, off) => $(id).addEventListener('click', () => { st[key] = !st[key]; $(id).setAttribute('aria-pressed', st[key]); $(id).textContent = st[key] ? on : off; });
+  flip('freeze', 'paused', 'Unfreeze', 'Freeze the wave');
+  flip('labels', 'labels', 'Labels on', 'Labels off');
+  flip('slow', 'slow', 'Normal speed', 'Slow motion');
+  $('reset').addEventListener('click', () => {
+    Object.assign(st, { f: 4, a: 5, m: 'gas', t: 0 }); $('pitch').value = 4; $('loud').value = 5;
+    document.querySelectorAll('[data-m]').forEach((x) => x.setAttribute('aria-pressed', x.dataset.m === 'gas')); makeParticles(); readouts();
+  });
+  if (st.paused) { $('freeze').setAttribute('aria-pressed', 'true'); $('freeze').textContent = 'Unfreeze'; }
+
+  // ---------- challenge ----------
+  const CH = [
+    { q: 'Which wave is LOUDER?', A: [3, 8], B: [3, 3], ans: 'A', why: 'Wave A has the bigger amplitude (taller wave), so it is louder.' },
+    { q: 'Which wave has a HIGHER pitch?', A: [2, 5], B: [7, 5], ans: 'B', why: 'Wave B has more waves squeezed in, so it has a higher frequency and pitch.' },
+    { q: 'Which wave has the SHORTER wavelength?', A: [8, 6], B: [4, 6], ans: 'A', why: 'Wave A’s crests are closer together, so its wavelength is shorter.' },
+    { q: 'Which wave is QUIETER?', A: [5, 4], B: [5, 9], ans: 'A', why: 'Wave A has the smaller amplitude, so it is quieter.' },
+    { q: 'Which is a QUIET, HIGH-pitched sound?', A: [9, 3], B: [3, 9], ans: 'A', why: 'Wave A has a small amplitude (quiet) and a high frequency (high pitch).' },
+    { q: 'Which is a LOUD, HIGH-pitched sound?', A: [2, 2], B: [8, 8], ans: 'B', why: 'Wave B is tall (loud) and its waves are close together (high pitch).' },
+  ];
+  const done = new Array(CH.length).fill(null);
+  const deck = $('deck');
+  CH.forEach((c, i) => {
+    const el = document.createElement('article'); el.className = 'panel card';
+    el.innerHTML = `<div class="q"><span class="num">${i + 1}</span><span>${c.q}</span></div>
+      <div class="pair"><div class="row"><b>A</b><canvas data-w="A"></canvas></div><div class="row"><b>B</b><canvas data-w="B"></canvas></div></div>
+      <div class="answers"><button class="ans" id="c${i}A" data-a="A">A</button><button class="ans" id="c${i}B" data-a="B">B</button></div>
+      <p class="feedback" id="fb${i}">Tap A or B.</p>`;
+    deck.appendChild(el);
+    el.querySelectorAll('.ans').forEach((b) => b.addEventListener('click', () => {
+      el.querySelectorAll('.ans').forEach((x) => x.classList.remove('right', 'wrong'));
+      const ok = b.dataset.a === c.ans; b.classList.add(ok ? 'right' : 'wrong'); done[i] = ok;
+      const fb = $('fb' + i); fb.className = 'feedback ' + (ok ? 'ok' : 'no'); fb.textContent = (ok ? 'Correct! ' : 'Not quite. Look again: ') + (ok ? c.why : 'compare how tall the waves are and how close together the crests are.');
+      $('score').textContent = `Score: ${done.filter(Boolean).length} / 6`;
+    }));
+  });
+  function drawCards() {
+    deck.querySelectorAll('article').forEach((el, i) => {
+      el.querySelectorAll('canvas').forEach((cv) => {
+        const { ctx, w, h } = size(cv); const [f, a] = CH[i][cv.dataset.w]; const mid = h / 2;
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = C.rule; ctx.setLineDash([4, 4]); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(4, mid); ctx.lineTo(w - 4, mid); ctx.stroke(); ctx.setLineDash([]);
+        ctx.strokeStyle = C.wave; ctx.lineWidth = 2.5; ctx.beginPath();
+        const lam = 220 / f, A = a * 2.4;
+        for (let x = 4; x <= w - 4; x++) { const y = mid - A * Math.sin(2 * Math.PI * (x - 4) / lam); x === 4 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+        ctx.stroke();
+      });
+    });
+  }
+
+  const retheme = () => { C = css(); drawCards(); };
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', retheme);
+  new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { layout(); drawCards(); }, 120); });
+  layout(); readouts(); drawCards();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { drawCards(); });
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
